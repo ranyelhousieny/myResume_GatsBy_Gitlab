@@ -1,0 +1,54 @@
+stages:
+    - build
+    - test
+    - deploy
+
+variables:
+    AWS_DEFAULT_REGION: us-west-2 # The region of our S3 bucket
+    BUCKET_NAME: rany.tk         # Your bucket name
+      
+build website:
+    image: node
+    stage: build
+    script:
+        - npm install
+        - npm install -g gatsby-cli
+        - gatsby build
+    artifacts:
+        paths:
+            - public
+
+test artifact:
+    image: alpine
+    stage: test
+    script:
+        - ls
+        - cd ./public
+        - ls index.*
+        - grep -q "Rany" index.html
+        - echo $?
+        
+test website:
+    image: node
+    stage: test
+    script:
+        - npm install
+        - npm install -g gatsby-cli
+        - gatsby serve &
+        - sleep 5
+        - curl "http://localhost:9000" | tac | tac | grep -q "rany"
+
+deploys3:
+    image: "python:latest"   # We use python because there is a well-working AWS Sdk
+    stage: deploy
+    dependencies:
+        - build website      # We want to specify dependencies in an explicit way, to avoid confusion if there are different build jobs
+    before_script:
+        - pip install awscli # Install the SDK
+    script:
+        - aws s3 cp ./public s3://${BUCKET_NAME} --recursive 
+    environment:
+        name: ${CI_COMMIT_REF_SLUG}
+        url: http://${BUCKET_NAME}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/${CI_COMMIT_REF_SLUG}  # This is the url of the bucket we saved before
+    
+
