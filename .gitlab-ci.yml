@@ -4,8 +4,8 @@ stages:
     - deploy
 
 variables:
-    AWS_DEFAULT_REGION: us-west-2 # The region of our S3 bucket
-    BUCKET_NAME: rany.tk         # Your bucket name
+    AWS_DEFAULT_REGION: region       # The region of our S3 bucket
+    BUCKET_NAME: BUCKET_NAME         # bucket name
       
 build website:
     image: node
